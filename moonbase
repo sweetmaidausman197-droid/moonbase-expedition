@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lunar Outpost: Mission Control</title>
+<style>
+  :root { color-scheme: dark; --bg:#07111f; --panel:#101f33; --panel2:#162941; --line:#29415d; --text:#edf5ff; --muted:#a9bdd3; --cyan:#65d9ee; --gold:#ffd166; --green:#72e0a1; --red:#ff7b86; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,Segoe UI,Arial,sans-serif; background:radial-gradient(ellipse at top,#183454 0,#07111f 58%); color:var(--text); min-height:100vh; }
+  header { padding:28px 18px 18px; text-align:center; }
+  header .tag { color:var(--cyan); font-size:.78rem; font-weight:800; letter-spacing:.16em; }
+  h1 { margin:8px 0; font-size:clamp(2rem,5vw,3.4rem); }
+  header p { color:var(--muted); max-width:720px; margin:0 auto; }
+  main { max-width:1120px; margin:auto; padding:12px 18px 40px; }
+  .topline { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .pill { background:#10243a; border:1px solid var(--line); border-radius:999px; padding:8px 13px; color:var(--muted); font-size:.9rem; }
+  .grid { display:grid; grid-template-columns:1.15fr .85fr; gap:16px; }
+  .panel { background:linear-gradient(145deg,rgba(22,41,65,.97),rgba(12,27,44,.97)); border:1px solid var(--line); border-radius:18px; padding:18px; box-shadow:0 12px 35px #0003; }
+  .panel h2 { margin:0 0 14px; font-size:1.15rem; }
+  .scene { min-height:185px; border-radius:14px; overflow:hidden; position:relative; background:linear-gradient(#142b49 0 58%,#9a8d80 58% 60%,#655d59 60%); display:flex; align-items:end; justify-content:center; }
+  .earth { position:absolute; width:66px; height:66px; border-radius:50%; background:radial-gradient(circle at 30% 30%,#9ce4ff,#2873a8 60%,#12395d); top:17px; right:35px; box-shadow:0 0 28px #60cfff66; }
+  .moon { position:absolute; inset:auto 0 0; height:48%; background:radial-gradient(ellipse at 50% 0%,#b8aca0,#77716d 62%,#4a4647); }
+  .hab { z-index:1; width:170px; height:75px; margin-bottom:34px; border:4px solid #b8d0d9; border-radius:48% 48% 10px 10px; background:linear-gradient(110deg,#607b8c,#263d52); box-shadow:inset 0 10px 15px #fff2,0 7px 0 #39454d; position:relative; }
+  .hab:before { content:""; position:absolute; width:38px;height:26px;left:62px;top:15px;border-radius:50%;background:#8be5ef;border:4px solid #d3e8ed; }
+  .solar { position:absolute; z-index:1; bottom:37px; left:8%; width:90px; height:35px; background:repeating-linear-gradient(90deg,#1d5b88 0 14px,#7bc8e7 15px 17px); border:2px solid #a6d8ed; transform:skewY(-12deg); }
+  .scene-label { position:absolute; z-index:2; left:14px; top:12px; font-size:.78rem; color:#d9eafa; text-shadow:0 1px 3px #000; }
+  .resource-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .resource { background:#0b1a2b; border:1px solid var(--line); border-radius:12px; padding:11px; }
+  .resource-top { display:flex; justify-content:space-between; gap:8px; font-size:.9rem; }
+  .resource strong { font-size:1.1rem; }
+  .bar { height:8px; background:#25384d; border-radius:9px; margin-top:8px; overflow:hidden; }
+  .fill { height:100%; border-radius:9px; transition:width .25s; background:var(--green); }
+  .fill.warn { background:var(--gold); } .fill.danger { background:var(--red); }
+  .muted { color:var(--muted); font-size:.9rem; }
+  .actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  button { cursor:pointer; border:1px solid #3b5b78; background:#193651; color:var(--text); border-radius:12px; padding:12px; font:inherit; text-align:left; transition:.15s; }
+  button:hover { border-color:var(--cyan); transform:translateY(-1px); background:#204563; }
+  button:focus-visible { outline:3px solid var(--gold); outline-offset:2px; }
+  button small { display:block; color:var(--muted); margin-top:5px; line-height:1.35; }
+  button:disabled { opacity:.45; cursor:not-allowed; transform:none; }
+  .primary { background:#087d96; border-color:#38c9df; text-align:center; font-weight:800; }
+  .primary:hover { background:#0998b4; }
+  .log { max-height:190px; overflow:auto; display:flex; flex-direction:column; gap:8px; }
+  .log-entry { padding:9px 11px; background:#0a1929; border-left:3px solid var(--cyan); border-radius:7px; color:#d5e5f5; font-size:.88rem; }
+  .log-entry.bad { border-color:var(--red); } .log-entry.good { border-color:var(--green); }
+  .wide { grid-column:1/-1; }
+  .choice-note { padding:12px; border-radius:12px; background:#0b1a2b; border:1px solid var(--line); margin:12px 0; min-height:52px; color:var(--muted); }
+  .footer { color:var(--muted); font-size:.8rem; line-height:1.5; margin-top:16px; }
+  .modal { position:fixed; inset:0; background:#020812d9; display:none; align-items:center; justify-content:center; padding:20px; z-index:5; }
+  .modal.show { display:flex; }
+  .modal-card { max-width:520px; width:100%; background:#132840; border:1px solid var(--line); border-radius:18px; padding:24px; }
+  .modal-card h2 { margin-top:0; }
+  @media(max-width:760px) { .grid{grid-template-columns:1fr;} .wide{grid-column:auto;} .actions{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<header>
+  <div class="tag">JUNIOR SPACE AGENCY • TRAINING SIMULATION</div>
+  <h1>🌙 Lunar Outpost</h1>
+  <p>You are Mission Commander. Keep a small Moon base running for 7 days. Every upgrade and emergency response uses resources — there are no free choices.</p>
+</header>
+<main>
+  <div class="topline">
+    <div class="pill" id="dayLabel">MISSION DAY 1 / 7</div>
+    <div class="pill" id="statusLabel">🟢 Systems nominal</div>
+    <div class="pill">Crew: 4 astronauts</div>
+  </div>
+  <div class="grid">
+    <section class="panel">
+      <h2>🛰️ Your outpost</h2>
+      <div class="scene" role="img" aria-label="Illustration of a lunar habitat, solar panel and Earth in the sky">
+        <div class="earth"></div><div class="moon"></div><div class="solar"></div><div class="hab"></div>
+        <div class="scene-label">SHACKLETON CRATER REGION • MOON</div>
+      </div>
+      <p class="muted">The crew needs breathable air, clean water, power, food and protection from space weather. Monitor the dashboard and choose one major action each day.</p>
+      <div class="resource-grid" id="resources"></div>
+    </section>
+    <section class="panel">
+      <h2>📡 Mission briefing</h2>
+      <div id="briefing"><strong>Welcome, Commander.</strong><p class="muted">Your first priority is to balance the base's limited supplies. A solar storm may arrive later in the mission.</p></div>
+      <div class="choice-note" id="choiceNote">Choose a mission action to see its trade-offs.</div>
+      <div class="actions" id="actions">
+        <button data-action="shield">🛡️ Reinforce shielding<small>Use materials and power to improve storm protection.</small></button>
+        <button data-action="farm">🌱 Expand food garden<small>Spend power and water now to grow more food later.</small></button>
+        <button data-action="research">🔬 Run research experiment<small>Use oxygen and power for a valuable science result.</small></button>
+        <button data-action="repair">🔧 Maintain life-support<small>Use spare parts and power to improve system reliability.</small></button>
+        <button data-action="save">🔋 Power-saving mode<small>Reduce today's energy use; research pauses.</small></button>
+        <button data-action="comms">📨 Send a status message<small>Spend power to send a report. Replies are delayed.</small></button>
+      </div>
+      <p class="muted" id="actionHint">Select one action, then advance to the next mission day.</p>
+      <button class="primary" id="advance" style="width:100%;margin-top:8px" disabled>Advance to next day →</button>
+    </section>
+    <section class="panel">
+      <h2>🧠 Mission control log</h2>
+      <div class="log" id="log" aria-live="polite"><div class="log-entry good">Day 1: Landing complete. The habitat is pressurized and the crew is safe.</div></div>
+    </section>
+    <section class="panel">
+      <h2>🎯 Mission goals</h2>
+      <ul class="muted">
+        <li>Keep oxygen, water and power above critical levels.</li>
+        <li>Build enough shielding before the solar weather alert.</li>
+        <li>Grow food to reduce dependence on stored meals.</li>
+        <li>Complete the 7-day mission with the crew safe.</li>
+      </ul>
+      <p class="muted"><strong>Science fact:</strong> The Moon has almost no atmosphere to block radiation. Habitat design, storm shelters and careful activity planning help protect astronauts.</p>
+    </section>
+    <section class="panel wide">
+      <h2>📚 What did your decision teach you?</h2>
+      <p class="muted" id="lesson">Every resource is connected. For example, a greenhouse can produce food, but it also needs water, electricity, equipment and time.</p>
+    </section>
+  </div>
+  <p class="footer">Educational prototype. Resource values and event timing are simplified game mechanics, not operational NASA mission limits or a live radiation forecast. Real missions use detailed engineering models and monitored space-weather data. Explore NASA space-weather data at <a href="https://ccmc.gsfc.nasa.gov/tools/DONKI/" target="_blank" rel="noopener" style="color:var(--cyan)">NASA DONKI</a>.</p>
+</main>
+<div class="modal" id="endModal" role="dialog" aria-modal="true" aria-labelledby="endTitle">
+  <div class="modal-card"><h2 id="endTitle">Mission report</h2><p id="endText"></p><button class="primary" id="restart" style="width:100%">Start a new mission</button></div>
+</div>
+<script>
+(() => {
+  const initial = { oxygen:82, water:78, power:76, food:68, shielding:25, parts:55, garden:0, research:0, comms:0 };
+  let r, day, chosen, ended;
+  const $ = id => document.getElementById(id);
+  const names = {oxygen:"Oxygen",water:"Water",power:"Power",food:"Food",shielding:"Radiation shielding",parts:"Spare parts"};
+  const max = {oxygen:100,water:100,power:100,food:100,shielding:100,parts:100};
+  function reset() {
+    r={...initial}; day=1; chosen=null; ended=false;
+    $("log").innerHTML='<div class="log-entry good">Day 1: Landing complete. The habitat is pressurized and the crew is safe.</div>';
+    $("briefing").innerHTML='<strong>Welcome, Commander.</strong><p class="muted">Your first priority is to balance the base\\'s limited supplies. A solar storm may arrive later in the mission.</p>';
+    $("choiceNote").textContent="Choose a mission action to see its trade-offs.";
+    $("lesson").textContent="Every resource is connected. For example, a greenhouse can produce food, but it also needs water, electricity, equipment and time.";
+    $("endModal").classList.remove("show"); render();
+  }
+  function addLog(msg,type="") {
+    const el=document.createElement("div"); el.className="log-entry "+type; el.textContent=`Day ${day}: ${msg}`;
+    $("log").prepend(el);
+  }
+  function clamp() { for(const k of Object.keys(max)) r[k]=Math.max(0,Math.min(max[k],r[k])); }
+  function render() {
+    $("dayLabel").textContent=`MISSION DAY ${Math.min(day,7)} / 7`;
+    const critical=Object.keys(max).some(k=>r[k]<=15);
+    $("statusLabel").textContent=critical?"🟠 Resource warning":"🟢 Systems nominal";
+    $("resources").innerHTML="";
+    for(const k of Object.keys(max)) {
+      const val=Math.round(r[k]), cls=val<=25?"danger":val<=45?"warn":"";
+      const div=document.createElement("div"); div.className="resource";
+      div.innerHTML=`<div class="resource-top"><span>${names[k]}</span><strong>${val}%</strong></div><div class="bar"><div class="fill ${cls}" style="width:${val}%"></div></div>`;
+      $("resources").append(div);
+    }
+    document.querySelectorAll("[data-action]").forEach(b=>b.disabled=!!chosen||ended);
+    $("advance").disabled=!chosen||ended;
+  }
+  const actions = {
+    shield: {name:"Reinforce shielding",cost:"−12 power, −12 spare parts",lesson:"Shielding takes mass and engineering effort. More protection can mean less power or equipment available for other jobs.",apply(){r.power-=12;r.parts-=12;r.shielding+=22;}},
+    farm: {name:"Expand food garden",cost:"−10 power, −10 water, −5 spare parts",lesson:"Growing food can reduce stored-food needs, but plants require water, energy and equipment before they produce a harvest.",apply(){r.power-=10;r.water-=10;r.parts-=5;r.garden+=1;}},
+    research: {name:"Run research experiment",cost:"−10 oxygen, −12 power",lesson:"Science can create valuable knowledge, but experiments compete with life-support and energy needs. Crew safety comes first.",apply(){r.oxygen-=10;r.power-=12;r.research+=1;}},
+    repair: {name:"Maintain life-support",cost:"−8 power, −10 spare parts",lesson:"Preventive maintenance uses supplies today but can reduce the chance of a breakdown later.",apply(){r.power-=8;r.parts-=10;r.oxygen=Math.min(100,r.oxygen+7);r.water=Math.min(100,r.water+4);}},
+    save: {name:"Power-saving mode",cost:"Research and garden work pause today",lesson:"Energy conservation protects essential systems, but it can delay science and food production.",apply(){r.power=Math.min(100,r.power+13);}},
+    comms: {name:"Send a status message",cost:"−6 power; reply arrives after a delay",lesson:"Signals between Earth and the Moon take time to travel. Crews need procedures and plans they can use while waiting for a reply.",apply(){r.power-=6;r.comms+=1;}}
+  };
+  document.querySelectorAll("[data-action]").forEach(btn=>btn.addEventListener("click",()=>{
+    if(chosen||ended)return;
+    const key=btn.dataset.action, a=actions[key]; chosen=key;
+    a.apply(); clamp();
+    $("choiceNote").innerHTML=`<strong>${a.name}</strong><br>${a.cost}<br><span class="muted">${a.lesson}</span>`;
+    $("lesson").textContent=a.lesson;
+    addLog(`Selected: ${a.name}. Trade-off: ${a.cost}.`);
+    render();
+  }));
+  $("advance").addEventListener("click",()=>{
+    if(!chosen||ended)return;
+    // Daily baseline consumption for a four-person crew.
+    r.oxygen-=8; r.water-=7; r.food-=8; r.power-=7;
+    if(r.garden>0 && day>=3){r.food+=Math.min(9,r.garden*4);r.water-=2;r.power-=2;}
+    if(day===3){r.power-=8;addLog("A dust-covered solar array produces less electricity. The crew must manage the remaining power.","bad");}
+    if(day===4){
+      const impact=Math.max(5,24-Math.floor(r.shielding*.18));
+      r.oxygen-=2; r.power-=4;
+      if(r.shielding<45){r.food-=5;addLog(`Solar weather alert! The shelter is under-protected; the crew moves into the storm-safe area. Protection score is low.`, "bad");}
+      else addLog("Solar weather alert! Your reinforced shelter gives the crew a safer place to wait out the event.","good");
+      r.shielding=Math.min(100,r.shielding+0); // protection is not consumed in this simplified model
+      $("lesson").textContent="Solar particle events can increase radiation risk. A storm shelter with suitable shielding is one part of crew protection; real mission plans also use forecasts and operational procedures.";
+    }
+    if(day===5 && r.comms>0) addLog("A delayed reply from Earth arrives: 'We received your report. Continue using your onboard emergency checklist.'","good");
+    if(day===6 && r.parts<20){r.power-=5;addLog("A worn component needs extra power to keep operating because spare parts are low.","bad");}
+    clamp();
+    const failed=["oxygen","water","power","food"].some(k=>r[k]<=0);
+    day++; chosen=null;
+    if(failed){finish(false,"A critical supply ran out. The crew could not safely continue the mission. Mission planners must keep reserves for unexpected events.");return;}
+    if(day>7){finish(true,"Seven days complete! Your crew kept the outpost operating. Review which resources became tight and how your choices shaped the mission.");return;}
+    const brief = day===4 ? "Space-weather alert: elevated solar activity is expected in this training scenario. Your shelter's shielding level matters." :
+      day===5 ? "Earth has received your earlier message. Remember: communication is not instant, so crews need plans for decisions they cannot wait to ask about." :
+      "A new mission day begins. Daily life-support use continues even when the crew does not run an experiment.";
+    $("briefing").innerHTML=`<strong>${brief}</strong><p class="muted">Choose one action for Day ${day}. Check your resource bars before committing.</p>`;
+    $("choiceNote").textContent="Choose your next action.";
+    addLog("Daily systems check complete. Life-support supplies were used by the crew.");
+    render();
+  });
+  function finish(success,msg){
+    ended=true; render();
+    $("endTitle").textContent=success?"🏆 Mission complete":"⚠️ Mission ended early";
+    $("endText").textContent=msg;
+    $("endModal").classList.add("show");
+  }
+  $("restart").addEventListener("click",reset);
+  reset();
+})();
+</script>
+</body>
+</html>
