@@ -125,7 +125,7 @@
   function reset() {
     r={...initial}; day=1; chosen=null; ended=false;
     $("log").innerHTML='<div class="log-entry good">Day 1: Landing complete. The habitat is pressurized and the crew is safe.</div>';
-    $("briefing").innerHTML='<strong>Welcome, Commander.</strong><p class="muted">Your first priority is to balance the base\\'s limited supplies. A solar storm may arrive later in the mission.</p>';
+    $("briefing").innerHTML='<strong>Welcome, Commander.</strong><p class="muted">Your first priority is to balance the base\'s limited supplies. A solar storm may arrive later in the mission.</p>';
     $("choiceNote").textContent="Choose a mission action to see its trade-offs.";
     $("lesson").textContent="Every resource is connected. For example, a greenhouse can produce food, but it also needs water, electricity, equipment and time.";
     $("endModal").classList.remove("show"); render();
